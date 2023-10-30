@@ -24,4 +24,8 @@ df.show()
 
 # COMMAND ----------
 
+df.write.mode("overwrite").saveAsTable("default.raw")
+
+# COMMAND ----------
+
 
