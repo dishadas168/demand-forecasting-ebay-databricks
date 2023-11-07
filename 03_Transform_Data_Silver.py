@@ -4,6 +4,8 @@ from pyspark.sql.functions import isnan, when, count, col, split, regexp_replace
 from pyspark.sql.types import DateType, FloatType, StringType
 
 from datetime import datetime
+import calendar
+from dateutil import tz
 
 # COMMAND ----------
 
@@ -15,7 +17,27 @@ spark.conf.set("spark.sql.parquet.int96RebaseModeInWrite", "CORRECTED")
 
 # COMMAND ----------
 
+def get_scrape_date(date_string):
+
+    from_zone = tz.gettz('UTC')
+    to_zone = tz.gettz('America/Chicago')
+    date_string = date_string.split(".")[0]
+    date_format = "%Y-%m-%dT%H:%M:%S"
+    dt_obj = datetime.strptime(date_string, date_format)
+    dt_obj = dt_obj.replace(tzinfo=from_zone)
+    dt_obj = dt_obj.astimezone(to_zone)
+    month = calendar.month_abbr[int(dt_obj.month)]
+
+    scrape_date = f"Sold  {month} {dt_obj.day}, {dt_obj.year}"
+    return scrape_date
+
+dbutils.widgets.text("date","")
+date_param = dbutils.widgets.get("date")
+scrape_date = get_scrape_date(date_param)
+# scrape_date="Sold  Nov 6, 2023"
+
 df = spark.read.table("raw_sales")
+df = df.filter(col('date_sold') == scrape_date)
 df.limit(5).toPandas()
 
 # COMMAND ----------

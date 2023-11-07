@@ -2,6 +2,10 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType,StructField, StringType, IntegerType, DateType, BooleanType
 
+import calendar
+from datetime import datetime
+from dateutil import tz
+
 # COMMAND ----------
 
 databasename= "demand-froecasting-ebay"
@@ -36,11 +40,30 @@ custom_schema = StructType([ \
 
 # COMMAND ----------
 
+def get_scrape_date(date_string):
+
+    from_zone = tz.gettz('UTC')
+    to_zone = tz.gettz('America/Chicago')
+    date_string = date_string.split(".")[0]
+    date_format = "%Y-%m-%dT%H:%M:%S"
+    dt_obj = datetime.strptime(date_string, date_format)
+    dt_obj = dt_obj.replace(tzinfo=from_zone)
+    dt_obj = dt_obj.astimezone(to_zone)
+    month = calendar.month_abbr[int(dt_obj.month)]
+
+    scrape_date = f"Sold  {month} {dt_obj.day}, {dt_obj.year}"
+    return scrape_date
+
+dbutils.widgets.text("date","")
+date_param = dbutils.widgets.get("date")
+scrape_date = get_scrape_date(date_param)
+# scrape_date = "Sold  Nov 6, 2023"
+
 df = spark.read\
     .format("com.mongodb.spark.sql.DefaultSource")\
     .option("database", databasename)\
     .option("collection",collection_name)\
-    .option("pipeline", [{'$match': {"date_sold": "Sold  Oct 30, 2023"}}])\
+    .option("pipeline", [{'$match': {"date_sold": scrape_date}}])\
     .schema(custom_schema)\
     .load()
 
@@ -48,4 +71,8 @@ df.show(n=5)
 
 # COMMAND ----------
 
-df.write.mode('append').format("parquet").saveAsTable("raw_sales")
+df.write.mode('append').saveAsTable("raw_sales")
+
+# COMMAND ----------
+
+
