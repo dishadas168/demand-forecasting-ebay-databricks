@@ -121,7 +121,7 @@ df.schema
 
 # COMMAND ----------
 
-df.write.option('path','dbfs:/user/hive/warehouse/').mode('overwrite').format("parquet").saveAsTable("processed_sales")
+df.write.option('path','dbfs:/user/hive/warehouse/').mode('append').format("parquet").saveAsTable("processed_sales")
 
 # COMMAND ----------
 
