@@ -33,11 +33,16 @@ def get_scrape_date(date_string):
 
 dbutils.widgets.text("date","")
 date_param = dbutils.widgets.get("date")
-scrape_date = get_scrape_date(date_param)
+
+
 # scrape_date="Sold  Nov 6, 2023"
 
 df = spark.read.table("raw_sales")
-df = df.filter(col('date_sold') == scrape_date)
+
+if len(date_param) > 0:
+    scrape_date = get_scrape_date(date_param)
+    df = df.filter(col('date_sold') == scrape_date)
+    
 df.limit(5).toPandas()
 
 # COMMAND ----------
